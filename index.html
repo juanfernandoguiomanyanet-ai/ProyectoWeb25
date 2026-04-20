@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS – Papel y Luna</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ═══ TOPBAR ═══ -->
+<div id="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+    </svg>
+    <div>
+      <span>Papel y Luna</span>
+      <small>Punto de Venta</small>
+    </div>
+  </div>
+  <nav>
+    <button onclick="showView('ventas')"      id="nav-ventas"      class="active">Ventas</button>
+    <button onclick="showView('historial')"   id="nav-historial">Historial</button>
+    <button onclick="showView('compras')"     id="nav-compras">Compras</button>
+    <button onclick="showView('productos')"   id="nav-productos">Productos</button>
+    <button onclick="showView('categorias')"  id="nav-categorias">Categorías</button>
+    <button onclick="showView('proveedores')" id="nav-proveedores">Proveedores</button>
+  </nav>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main>
+
+  <!-- ─── VENTAS ─── -->
+  <div class="view active" id="view-ventas">
+
+    <!-- Barra de venta abierta -->
+    <div id="venta-abierta-bar" class="venta-open-bar" style="display:none">
+      <span>⚠ Venta abierta: <strong id="venta-abierta-id"></strong> — continúa o ciérrala</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-secondary" onclick="descartarVentaAbierta()">Descartar</button>
+        <button class="btn btn-sm btn-primary"   onclick="retomar()">Retomar</button>
+      </div>
+    </div>
+
+    <div class="pos-grid">
+      <!-- Catálogo -->
+      <div>
+        <div class="catalog-search">
+          <div class="search-input-wrap">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" id="search-prod" placeholder="Buscar producto…"
+                   oninput="filtrarProductos()"
+                   style="padding:9px 13px 9px 34px;border:1px solid var(--border2);
+                          border-radius:var(--radius);font-size:14px;
+                          font-family:'DM Sans',sans-serif;outline:none;width:100%">
+          </div>
+          <select id="filter-cat" onchange="filtrarProductos()"
+                  style="padding:9px 13px;border:1px solid var(--border2);border-radius:var(--radius);
+                         font-size:13.5px;font-family:'DM Sans',sans-serif;
+                         background:var(--surface);outline:none;color:var(--text)">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div id="catalog-loading" class="loading">
+          <div class="spinner"></div><span>Cargando productos…</span>
+        </div>
+        <div id="products-grid" class="products-grid" style="display:none"></div>
+      </div>
+
+      <!-- Carrito -->
+      <div>
+        <div class="cart-panel">
+          <div class="cart-header">
+            <h3>Carrito</h3>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button style="font-size:12px;padding:5px 10px;border-radius:7px;background:transparent;
+                             border:1px solid var(--border);cursor:pointer;color:var(--text2);
+                             font-family:'DM Sans',sans-serif"
+                      onclick="guardarVentaAbierta()">
+                Guardar
+              </button>
+              <button class="btn-icon" title="Vaciar carrito" onclick="limpiarCarrito()">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="cart-items" id="cart-items">
+            <div class="empty" style="padding:32px 0">
+              <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+              </svg>
+              <p style="margin-top:8px;font-size:13px">Agrega productos al carrito</p>
+            </div>
+          </div>
+
+          <div class="cart-footer">
+            <div class="cart-summary">
+              <div class="cart-row"><span>Subtotal</span><span id="subtotal">$0</span></div>
+              <div class="cart-row total"><span>Total</span><span id="total-cart">$0</span></div>
+            </div>
+
+            <p style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px;
+                      letter-spacing:0.03em;text-transform:uppercase">Método de pago</p>
+            <div class="pay-methods">
+              <button class="pay-btn selected" onclick="selPago(this,'Efectivo')">Efectivo</button>
+              <button class="pay-btn"          onclick="selPago(this,'Tarjeta')">Tarjeta</button>
+              <button class="pay-btn"          onclick="selPago(this,'Transferencia')">Transf.</button>
+            </div>
+
+            <p style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px;
+                      letter-spacing:0.03em;text-transform:uppercase">Cliente (opcional)</p>
+            <select id="cart-cliente"
+                    style="width:100%;padding:8px 12px;border:1px solid var(--border2);
+                           border-radius:var(--radius);font-size:13.5px;
+                           font-family:'DM Sans',sans-serif;background:var(--surface);
+                           color:var(--text);outline:none;margin-bottom:12px">
+              <option value="">Sin cliente</option>
+            </select>
+
+            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px"
+                    onclick="cobrar()">
+              Cobrar venta
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── HISTORIAL ─── -->
+  <div class="view" id="view-historial">
+    <div class="page-header">
+      <div>
+        <h2>Historial de ventas</h2>
+        <p>Registro de todas las transacciones</p>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Total ventas</div><div class="value" id="st-ventas">—</div></div>
+      <div class="stat-card"><div class="label">Ingresos totales</div><div class="value" id="st-ingresos">—</div></div>
+      <div class="stat-card"><div class="label">Ticket promedio</div><div class="value" id="st-ticket">—</div></div>
+      <div class="stat-card"><div class="label">Método más usado</div><div class="value" id="st-metodo" style="font-size:18px">—</div></div>
+    </div>
+    <div class="table-wrap">
+      <div id="hist-loading" class="loading" style="padding:20px 24px">
+        <div class="spinner"></div><span>Cargando historial…</span>
+      </div>
+      <table id="hist-table" style="display:none">
+        <thead>
+          <tr>
+            <th>N° Venta</th><th>Fecha</th><th>Items</th>
+            <th>Total</th><th>Método</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── COMPRAS ─── -->
+  <div class="view" id="view-compras">
+    <div class="page-header">
+      <div><h2>Registro de compras</h2><p>Registra compras a proveedores</p></div>
+      <button class="btn btn-primary" onclick="abrirModalCompra()">+ Nueva compra</button>
+    </div>
+    <div class="table-wrap">
+      <div id="comp-loading" class="loading" style="padding:20px 24px">
+        <div class="spinner"></div><span>Cargando compras…</span>
+      </div>
+      <table id="comp-table" style="display:none">
+        <thead>
+          <tr><th>ID</th><th>Fecha</th><th>Proveedor</th><th>Productos</th><th>Total costo</th></tr>
+        </thead>
+        <tbody id="comp-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── PRODUCTOS ─── -->
+  <div class="view" id="view-productos">
+    <div class="page-header">
+      <div><h2>Productos</h2><p>Gestiona tu catálogo</p></div>
+      <button class="btn btn-primary" onclick="abrirModalProducto()">+ Nuevo producto</button>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="search-input-wrap" style="max-width:340px">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search-prod-table" placeholder="Buscar por nombre o código…"
+               oninput="filtrarTablaProductos()"
+               style="padding:9px 13px 9px 34px;border:1px solid var(--border2);
+                      border-radius:var(--radius);font-size:14px;
+                      font-family:'DM Sans',sans-serif;outline:none;width:100%">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div id="prod-loading" class="loading" style="padding:20px 24px">
+        <div class="spinner"></div><span>Cargando productos…</span>
+      </div>
+      <table id="prod-table" style="display:none">
+        <thead>
+          <tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Costo</th><th>Stock</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="prod-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── CATEGORÍAS ─── -->
+  <div class="view" id="view-categorias">
+    <div class="page-header">
+      <div><h2>Categorías</h2><p>Organiza tus productos por categoría</p></div>
+      <button class="btn btn-primary" onclick="abrirModalCategoria()">+ Nueva categoría</button>
+    </div>
+    <div class="table-wrap">
+      <div id="cat-loading" class="loading" style="padding:20px 24px">
+        <div class="spinner"></div><span>Cargando categorías…</span>
+      </div>
+      <table id="cat-table" style="display:none">
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="cat-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── PROVEEDORES ─── -->
+  <div class="view" id="view-proveedores">
+    <div class="page-header">
+      <div><h2>Proveedores</h2><p>Directorio de proveedores</p></div>
+      <button class="btn btn-primary" onclick="abrirModalProveedor()">+ Nuevo proveedor</button>
+    </div>
+    <div class="table-wrap">
+      <div id="prov-loading" class="loading" style="padding:20px 24px">
+        <div class="spinner"></div><span>Cargando proveedores…</span>
+      </div>
+      <table id="prov-table" style="display:none">
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="prov-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+
+<!-- ═══ MODALES ═══ -->
+
+<!-- Modal: Nuevo / Editar Producto -->
+<div class="modal-bg" id="modal-producto">
+  <div class="modal">
+    <h3 id="modal-prod-title">Nuevo producto</h3>
+    <input type="hidden" id="prod-edit-codigo">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Código</label>
+        <input type="text" id="prod-codigo" placeholder="Ej: P001">
+      </div>
+      <div class="form-group">
+        <label>Categoría</label>
+        <select id="prod-categoria"><option value="">Sin categoría</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Nombre</label>
+      <input type="text" id="prod-nombre" placeholder="Nombre del producto">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Precio de venta</label>
+        <input type="number" id="prod-precio" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>Costo</label>
+        <input type="number" id="prod-costo" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Stock</label>
+      <input type="number" id="prod-stock" placeholder="0" min="0">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-producto')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarProducto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nueva / Editar Categoría -->
+<div class="modal-bg" id="modal-categoria">
+  <div class="modal">
+    <h3 id="modal-cat-title">Nueva categoría</h3>
+    <input type="hidden" id="cat-edit-id">
+    <div class="form-group">
+      <label>ID</label>
+      <input type="text" id="cat-id" placeholder="Ej: C001">
+    </div>
+    <div class="form-group">
+      <label>Nombre</label>
+      <input type="text" id="cat-nombre" placeholder="Nombre de la categoría">
+    </div>
+    <div class="form-group">
+      <label>Descripción</label>
+      <textarea id="cat-desc" rows="2" placeholder="Descripción opcional"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-categoria')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarCategoria()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo / Editar Proveedor -->
+<div class="modal-bg" id="modal-proveedor">
+  <div class="modal">
+    <h3 id="modal-prov-title">Nuevo proveedor</h3>
+    <input type="hidden" id="prov-edit-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>ID</label>
+        <input type="text" id="prov-id" placeholder="Ej: V001">
+      </div>
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" id="prov-nombre" placeholder="Nombre del proveedor">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="prov-tel" placeholder="Número de contacto">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="prov-email" placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-proveedor')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarProveedor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nueva Compra -->
+<div class="modal-bg" id="modal-compra">
+  <div class="modal" style="max-width:640px">
+    <h3>Nueva compra</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ID Compra</label>
+        <input type="text" id="compra-id" readonly
+               style="background:var(--surface2)" placeholder="Generado automáticamente">
+      </div>
+      <div class="form-group">
+        <label>Proveedor</label>
+        <select id="compra-prov"><option value="">Seleccionar proveedor…</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Fecha</label>
+      <input type="date" id="compra-fecha">
+    </div>
+    <p style="font-size:12.5px;font-weight:500;color:var(--text2);margin-bottom:8px;
+              text-transform:uppercase;letter-spacing:0.04em">Productos</p>
+    <div class="compra-items-area">
+      <div class="compra-item-row header">
+        <span>Producto</span><span>Cantidad</span><span>Costo unit.</span><span></span>
+      </div>
+      <div id="compra-items-list"></div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="addCompraItem()">+ Agregar producto</button>
+    <div style="margin-top:14px;text-align:right">
+      <span style="font-size:15px;font-weight:600;font-family:'DM Serif Display',serif">Total: </span>
+      <span id="compra-total"
+            style="font-size:18px;font-weight:600;font-family:'DM Serif Display',serif;color:var(--accent)">
+        $0
+      </span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-compra')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarCompra()">Registrar compra</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de Venta -->
+<div class="modal-bg" id="modal-detalle">
+  <div class="modal">
+    <h3 id="detalle-title">Detalle de venta</h3>
+    <div id="detalle-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar Producto desde Venta -->
+<div class="modal-bg" id="modal-edit-prod-venta">
+  <div class="modal" style="max-width:400px">
+    <h3>Editar producto</h3>
+    <input type="hidden" id="epv-codigo">
+    <div class="form-group"><label>Nombre</label><input type="text" id="epv-nombre"></div>
+    <div class="form-group"><label>Precio</label><input type="number" id="epv-precio" min="0"></div>
+    <div class="form-group"><label>Stock</label><input type="number" id="epv-stock" min="0"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-edit-prod-venta')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarEditProdVenta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast"></div>
+
+
+<!-- ═══ SCRIPTS ═══
+     Orden importante: utilidades base primero, módulos después, app al final -->
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ventas.js"></script>
+<script src="js/historial.js"></script>
+<script src="js/compras.js"></script>
+<script src="js/productos.js"></script>
+<script src="js/categorias.js"></script>
+<script src="js/proveedores.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
