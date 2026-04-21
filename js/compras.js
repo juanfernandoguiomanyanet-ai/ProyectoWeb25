@@ -208,41 +208,53 @@ async function guardarCompra() {
   if (!proveedor) { toast('Selecciona un proveedor', 'error'); return; }
   if (!compraItems.length) { toast('Agrega al menos un producto', 'error'); return; }
 
-  // Extraer categorías únicas para guardarlas
-  const categoriasUnicas = [...new Set(compraItems.map(x => x.categoria).filter(c => c))];
-
   const total = compraItems.reduce((sum, x) => sum + (Number(x.cantidad) * Number(x.costo)), 0);
   const compraId = document.getElementById('compra-id').value;
 
-  const compra = {
-    id: compraId,
-    ID: compraId,
-    fecha: document.getElementById('compra-fecha').value,
-    proveedor,
-    productos: JSON.stringify(compraItems.map(x => ({
-      nombre: x.nombre,
-      categoria: x.categoria,
-      cantidad: x.cantidad,
-      costo: x.costo,
-      venta: x.venta
-    }))),
-    totalcosto: total
-  };
-
   try {
-    // REGISTRO DE CATEGORÍAS (Sin tocar el servidor, enviamos a la ruta de categorias)
-    // Esto asume que tu API maneja 'categorias' igual que 'compras'
+    // 1. REGISTRAR CATEGORÍAS (Esto ya te funciona)
+    const categoriasUnicas = [...new Set(compraItems.map(x => x.categoria).filter(c => c))];
     for (const cat of categoriasUnicas) {
       await apiPost('categorias', { nombre: cat });
     }
 
+    // 2. REGISTRAR CADA PRODUCTO EN LA HOJA "PRODUCTOS"
+    // Hacemos un envío por cada producto para que aparezcan en la hoja de Productos
+    for (const item of compraItems) {
+      await apiPost('productos', {
+        nombre: item.nombre,
+        categoria: item.categoria,
+        costo: item.costo,   // Costo de compra
+        precio: item.venta,  // Precio de venta
+        stock: item.cantidad // Lo que acabas de comprar
+      });
+    }
+
+    // 3. REGISTRAR LA COMPRA (Lo que ya hacias)
+    const compra = {
+      id: compraId,
+      ID: compraId,
+      fecha: document.getElementById('compra-fecha').value,
+      proveedor,
+      productos: JSON.stringify(compraItems.map(x => ({
+        nombre: x.nombre,
+        categoria: x.categoria,
+        cantidad: x.cantidad,
+        costo: x.costo,
+        venta: x.venta 
+      }))),
+      totalcosto: total
+    };
+
     const result = await apiPost('compras', compra);
+    
     if (result.ok || result.success) {
-      toast('Compra y categorías registradas');
+      toast('Compra y productos guardados en sus hojas');
       cerrarModal('modal-compra');
       loadCompras();
     }
   } catch (e) {
-    toast('Error al registrar datos', 'error');
+    console.error(e);
+    toast('Error al sincronizar con Sheets', 'error');
   }
 }
