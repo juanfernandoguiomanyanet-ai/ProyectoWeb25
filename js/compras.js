@@ -46,23 +46,27 @@ function renderCompras(data) {
   body.innerHTML = data.map(c => {
     let resumenProductos = '—';
     try {
+      // Intentamos leer el JSON que me mostraste
       const arr = JSON.parse(c.productos || c.itemsJson || '[]');
       if (arr.length) {
         resumenProductos = arr
-          .map(x => `${x.nombre || x.n} ×${x.cantidad || x.qty}`)
+          .map(x => {
+            // Si tiene categoría la mostramos, si no, solo nombre y cantidad
+            const cat = x.categoria ? `[${x.categoria}] ` : '';
+            return `${cat}${x.nombre || x.n} ×${x.cantidad || x.qty}`;
+          })
           .join(', ');
       }
     } catch { /* sin detalle */ }
 
     return `<tr>
-   <td><span class="badge badge-amber">${c.id || c.ID || '—'}</span></td>
-   <td>${c.fecha || '—'}</td>
-   <td>${c.proveedor || c.proveedorId || '—'}</td>
-   <td style="font-size:12px;max-width:180px;overflow:hidden;
-        text-overflow:ellipsis;white-space:nowrap">
-    ${resumenProductos}
-   </td>
-   <td style="font-weight:600">${fmt(c.totalcosto || c.total)}</td>
+    <td><span class="badge badge-amber">${c.id || c.ID || '—'}</span></td>
+    <td>${c.fecha || '—'}</td>
+    <td>${c.proveedor || '—'}</td>
+    <td style="font-size:12px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${resumenProductos}">
+     ${resumenProductos}
+    </td>
+    <td style="font-weight:600">${fmt(c.totalcosto || c.total)}</td>
   </tr>`;
   }).join('');
 }
@@ -82,15 +86,35 @@ function abrirModalCompra() {
 }
 
 /** Rellena el select de proveedores en el modal de compra */
+/** Rellena el select de proveedores y añade opción de agregar nuevo */
 function poblarSelectProveedoresCompra() {
   const sel = document.getElementById('compra-prov');
-  sel.innerHTML = '<option value="">Seleccionar proveedor…</option>';
+  sel.innerHTML = '<option value="">Seleccionar proveedor…</option> <option value="NUEVO" style="font-weight:bold; color:var(--primary)">+ AGREGAR NUEVO PROVEEDOR</option>';
+
   state.proveedores.forEach(p => {
     const opt = document.createElement('option');
-    opt.value = p.nombre || p.ID || p.id; // Priorizamos nombre para legibilidad en la tabla
+    opt.value = p.nombre || p.ID || p.id;
     opt.textContent = p.nombre;
     sel.appendChild(opt);
   });
+
+  // Detectar si elige "Nuevo"
+  sel.onchange = async (e) => {
+    if (e.target.value === "NUEVO") {
+      const nombreProv = prompt("Nombre del nuevo proveedor:");
+      if (nombreProv) {
+        // Enviamos el nuevo proveedor al Sheets (suponiendo que tu apiPost('proveedores') ya funciona)
+        const res = await apiPost('proveedores', { nombre: nombreProv, id: 'PROV-' + uid() });
+        if (res.ok || res.success) {
+          state.proveedores.push({ nombre: nombreProv });
+          poblarSelectProveedoresCompra();
+          sel.value = nombreProv;
+        }
+      } else {
+        sel.value = "";
+      }
+    }
+  };
 }
 
 // ─── ÍTEMS DE COMPRA ─────────────────────────────────────
@@ -170,39 +194,47 @@ function calcTotalCompra() {
 // ─── GUARDAR COMPRA ──────────────────────────────────────
 
 /** Valida y envía la compra al Google Sheets */
+/** Valida y envía la compra, categorías y productos */
 async function guardarCompra() {
-const proveedor = document.getElementById('compra-prov').value;
-if (!proveedor) { toast('Selecciona un proveedor', 'error'); return; }
-if (!compraItems.length) { toast('Agrega al menos un producto', 'error'); return; }
+  const proveedor = document.getElementById('compra-prov').value;
+  if (!proveedor) { toast('Selecciona un proveedor', 'error'); return; }
+  if (!compraItems.length) { toast('Agrega al menos un producto', 'error'); return; }
 
-const total = compraItems.reduce((sum, x) => sum + (Number(x.cantidad) * Number(x.costo)), 0);
- const compraId = document.getElementById('compra-id').value;
+  // Extraer categorías únicas para guardarlas
+  const categoriasUnicas = [...new Set(compraItems.map(x => x.categoria).filter(c => c))];
 
-const compra = {
-  id: compraId,
- ID: compraId,
- fecha:  document.getElementById('compra-fecha').value,
- proveedor,
- productos: JSON.stringify(compraItems.map(x => ({
- nombre: x.nombre,
-   categoria: x.categoria, // Nuevo campo en el JSON
- cantidad: x.cantidad,
- costo: x.costo,
-   venta: x.venta // Nuevo campo en el JSON
- }))),
- totalcosto: total
-};
+  const total = compraItems.reduce((sum, x) => sum + (Number(x.cantidad) * Number(x.costo)), 0);
+  const compraId = document.getElementById('compra-id').value;
 
-try {
- const result = await apiPost('compras', compra);
- if (result.ok || result.success) {
- toast('Compra registrada correctamente');
- cerrarModal('modal-compra');
- loadCompras();
- } else {
- toast('Error: ' + (result.error || result.message || ''), 'error');
- }
-} catch (e) {
- toast('Error de conexión con el servidor', 'error');
-}
+  const compra = {
+    id: compraId,
+    ID: compraId,
+    fecha: document.getElementById('compra-fecha').value,
+    proveedor,
+    productos: JSON.stringify(compraItems.map(x => ({
+      nombre: x.nombre,
+      categoria: x.categoria,
+      cantidad: x.cantidad,
+      costo: x.costo,
+      venta: x.venta
+    }))),
+    totalcosto: total
+  };
+
+  try {
+    // REGISTRO DE CATEGORÍAS (Sin tocar el servidor, enviamos a la ruta de categorias)
+    // Esto asume que tu API maneja 'categorias' igual que 'compras'
+    for (const cat of categoriasUnicas) {
+      await apiPost('categorias', { nombre: cat });
+    }
+
+    const result = await apiPost('compras', compra);
+    if (result.ok || result.success) {
+      toast('Compra y categorías registradas');
+      cerrarModal('modal-compra');
+      loadCompras();
+    }
+  } catch (e) {
+    toast('Error al registrar datos', 'error');
+  }
 }
