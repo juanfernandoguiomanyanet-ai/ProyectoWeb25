@@ -28,30 +28,30 @@ function renderCategorias(data) {
 
   if (!data.length) {
     body.innerHTML = `<tr>
-      <td colspan="4" style="text-align:center;color:var(--text3);padding:32px">
-        Sin categorías registradas
-      </td>
-    </tr>`;
+   <td colspan="4" style="text-align:center;color:var(--text3);padding:32px">
+    Sin categorías registradas
+   </td>
+  </tr>`;
     return;
   }
 
   body.innerHTML = data.map(c => `
-    <tr>
-      <td>
-        <code style="font-size:12px;background:var(--surface2);padding:2px 7px;border-radius:4px">
-          ${c.ID || c.id || '—'}
-        </code>
-      </td>
-      <td style="font-weight:500">${c.nombre || '—'}</td>
-      <td style="color:var(--text2);font-size:13px">${c.descripcion || c.Descripcion || '—'}</td>
-      <td>
-        <button class="btn-icon" title="Editar categoría"
-                onclick='abrirEditCategoria(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
-          ${iconoEditar()}
-        </button>
-      </td>
-    </tr>
-  `).join('');
+  <tr>
+   <td>
+    <code style="font-size:12px;background:var(--surface2);padding:2px 7px;border-radius:4px">
+     ${c.ID || c.id || '—'}
+    </code>
+   </td>
+   <td style="font-weight:500">${c.nombre || '—'}</td>
+   <td style="color:var(--text2);font-size:13px">${c.descripcion || c.Descripcion || '—'}</td>
+   <td>
+    <button class="btn-icon" title="Editar categoría"
+        onclick='abrirEditCategoria(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+     ${iconoEditar()}
+    </button>
+   </td>
+  </tr>
+ `).join('');
 }
 
 // ─── MODAL CATEGORÍA ─────────────────────────────────────
