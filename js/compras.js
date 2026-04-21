@@ -87,9 +87,15 @@ function abrirModalCompra() {
 
 /** Rellena el select de proveedores en el modal de compra */
 /** Rellena el select de proveedores y añade opción de agregar nuevo */
+/** Rellena el select de proveedores y abre el modal de proveedores.js si elige "Nuevo" */
 function poblarSelectProveedoresCompra() {
   const sel = document.getElementById('compra-prov');
-  sel.innerHTML = '<option value="">Seleccionar proveedor…</option> <option value="NUEVO" style="font-weight:bold; color:var(--primary)">+ AGREGAR NUEVO PROVEEDOR</option>';
+  
+  // Mantenemos la estructura limpia
+  sel.innerHTML = `
+    <option value="">Seleccionar proveedor…</option>
+    <option value="NUEVO_PROV" style="font-weight:bold; color:var(--primary)">+ AGREGAR NUEVO PROVEEDOR</option>
+  `;
 
   state.proveedores.forEach(p => {
     const opt = document.createElement('option');
@@ -98,21 +104,23 @@ function poblarSelectProveedoresCompra() {
     sel.appendChild(opt);
   });
 
-  // Detectar si elige "Nuevo"
-  sel.onchange = async (e) => {
-    if (e.target.value === "NUEVO") {
-      const nombreProv = prompt("Nombre del nuevo proveedor:");
-      if (nombreProv) {
-        // Enviamos el nuevo proveedor al Sheets (suponiendo que tu apiPost('proveedores') ya funciona)
-        const res = await apiPost('proveedores', { nombre: nombreProv, id: 'PROV-' + uid() });
-        if (res.ok || res.success) {
-          state.proveedores.push({ nombre: nombreProv });
-          poblarSelectProveedoresCompra();
-          sel.value = nombreProv;
-        }
+  // Evento para detectar cuando quieres crear uno nuevo
+  sel.onchange = (e) => {
+    if (e.target.value === "NUEVO_PROV") {
+      // 1. Cerramos el modal de compra actual para que no se encimen
+      cerrarModal('modal-compra'); 
+      
+      // 2. Llamamos a la función que abre el formulario de la imagen (af75bc.png)
+      // Nota: Asegúrate de que este sea el nombre de la función en tu proveedores.js
+      if (typeof abrirModalProveedor === 'function') {
+        abrirModalProveedor(); 
       } else {
-        sel.value = "";
+        // Si no se llama así, intentamos con el nombre estándar de tus modales
+        abrirModal('modal-proveedor'); 
       }
+      
+      // 3. Resetear el select por si el usuario cancela
+      sel.value = "";
     }
   };
 }
