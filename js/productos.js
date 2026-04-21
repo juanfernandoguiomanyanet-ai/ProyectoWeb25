@@ -126,27 +126,32 @@ function poblarSelectCatProducto(seleccionada = '') {
 /** Valida y envía el producto al Google Sheets */
 async function guardarProducto() {
   const nombre = document.getElementById('prod-nombre').value.trim();
-  if (!nombre) { toast('El nombre del producto es obligatorio', 'error'); return; }
+  const codigo = document.getElementById('prod-codigo').value.trim();
+  
+  if (!nombre) { toast('El nombre es obligatorio', 'error'); return; }
 
   const producto = {
-    codigo:    document.getElementById('prod-codigo').value.trim(),
-    nombre,
+    id: codigo, // <-- Google Script usa esto para buscar la fila
+    codigo: codigo,
+    nombre: nombre,
     categoria: document.getElementById('prod-categoria').value,
-    precio:    Number(document.getElementById('prod-precio').value) || 0,
-    costo:     Number(document.getElementById('prod-costo').value)  || 0,
-    stock:     Number(document.getElementById('prod-stock').value)  || 0,
+    precio: Number(document.getElementById('prod-precio').value) || 0,
+    costo: Number(document.getElementById('prod-costo').value) || 0,
+    stock: Number(document.getElementById('prod-stock').value) || 0,
   };
 
   try {
     const result = await apiPost('productos', producto);
-    if (result.success) {
-      toast('Producto guardado correctamente');
+    
+    // Tu script devuelve { ok: true }
+    if (result.ok || result.success) { 
+      toast('¡Producto guardado en Excel!');
       cerrarModal('modal-producto');
-      loadProductos();
+      loadProductos(); // Recarga la tabla
     } else {
-      toast('Error: ' + (result.message || ''), 'error');
+      toast('Error: ' + (result.error || 'No se pudo guardar'), 'error');
     }
   } catch (e) {
-    toast('Error de conexión con el servidor', 'error');
+    toast('Error de conexión', 'error');
   }
 }

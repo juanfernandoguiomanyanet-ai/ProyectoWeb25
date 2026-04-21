@@ -1,27 +1,20 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbyfdj5fBNX8mhpx-ZFYbZ0-EGdGm6oaSVX6BsBmX-tnfdZgiPtbLEbZND09Q03l9C3q/exec';
 
-/**
- * GET — obtiene todos los registros de una hoja
- */
 async function apiGet(resource) {
-  // Cambié "resource" por "sheet" y agregué "action=read" para que coincida con tu App Script
+  // Cambiamos a 'sheet' para que tu Google Script lo entienda
   const response = await fetch(`${API_URL}?action=read&sheet=${resource}`);
-  return await response.json(); 
+  const data = await response.json();
+  // Tu script devuelve un Array directo, si hay error devuelve el objeto de error
+  return Array.isArray(data) ? data : [];
 }
 
-/**
- * POST — guarda o edita un registro
- */
 async function apiPost(resource, data) {
   const response = await fetch(API_URL, {
     method: 'POST',
-    mode: 'cors', // Forzamos modo cors
-    headers: { 
-      // Usar text/plain evita el error de "Preflight" (CORS) de la imagen que pasaste
-      'Content-Type': 'text/plain;charset=utf-8' 
-    },
+    mode: 'cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Evita el error de CORS
     body: JSON.stringify({
-      action: 'write', // Agregamos la acción que espera tu App Script
+      action: 'write',
       sheet: resource,
       data: data
     })
