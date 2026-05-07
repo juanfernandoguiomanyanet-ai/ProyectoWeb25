@@ -140,22 +140,22 @@
     </div>
 
     <div id="modal-guardados" class="modal">
-      <div class="modal-content" style="max-width: 450px;">
-        <div class="modal-header">
-          <h3 style="display:flex; align-items:center; gap:8px">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Ventas en Espera
-          </h3>
-          <button class="btn-icon" onclick="cerrarModal('modal-guardados')">&times;</button>
+      <div class="modal-content">
+        <button class="btn-close-modal" onclick="cerrarModal('modal-guardados')">&times;</button>
+
+        <h3 style="display:flex; align-items:center; gap:10px; margin-bottom: 20px; color: #334155;">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Ventas en Espera
+        </h3>
+
+        <div id="lista-ventas-guardadas" style="max-height: 400px; overflow-y: auto; border-radius: 8px;">
         </div>
-        <div class="modal-body" style="padding: 0;">
-          <div id="lista-ventas-guardadas">
-          </div>
-        </div>
-        <div class="modal-footer" style="justify-content: center;">
-          <button class="btn btn-secondary" onclick="cerrarModal('modal-guardados')">Cerrar</button>
+
+        <div style="margin-top: 20px; text-align: right;">
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-guardados')"
+            style="border-radius: 10px; padding: 10px 20px;">Cerrar</button>
         </div>
       </div>
     </div>

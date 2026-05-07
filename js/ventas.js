@@ -45,8 +45,22 @@ function mostrarLoadingCatalogo(mostrar) {
 // --- LÓGICA DE VENTAS GUARDADAS ---
 
 function abrirModalGuardados() {
-  renderListaGuardados();
-  abrirModal('modal-guardados');
+  renderListaGuardados(); // Primero cargamos los datos
+  const modal = document.getElementById('modal-guardados');
+  modal.classList.add('active'); // Agregamos la clase para mostrarlo
+}
+
+function cerrarModal(id) {
+  const modal = document.getElementById(id);
+  modal.classList.remove('active'); // Quitamos la clase para ocultarlo
+}
+
+// Opcional: Cerrar si el usuario hace clic fuera de la ventana blanca
+window.onclick = function(event) {
+  const modal = document.getElementById('modal-guardados');
+  if (event.target == modal) {
+    cerrarModal('modal-guardados');
+  }
 }
 
 function renderListaGuardados() {
