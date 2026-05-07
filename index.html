@@ -41,17 +41,14 @@
     <!-- ─── VENTAS ─── -->
     <div class="view active" id="view-ventas">
 
-      <!-- Barra de venta abierta -->
       <div id="venta-abierta-bar" class="venta-open-bar" style="display:none">
-        <span>⚠ Venta abierta: <strong id="venta-abierta-id"></strong> — continúa o ciérrala</span>
+        <span>⚠ Tienes ventas pendientes en la lista de espera</span>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-sm btn-secondary" onclick="descartarVentaAbierta()">Descartar</button>
-          <button class="btn btn-sm btn-primary" onclick="retomar()">Retomar</button>
+          <button class="btn btn-sm btn-secondary" onclick="abrirModalGuardados()">Ver lista</button>
         </div>
       </div>
 
       <div class="pos-grid">
-        <!-- Catálogo -->
         <div>
           <div class="catalog-search">
             <div class="search-input-wrap">
@@ -75,15 +72,20 @@
           <div id="products-grid" class="products-grid" style="display:none"></div>
         </div>
 
-        <!-- Carrito -->
         <div>
           <div class="cart-panel">
             <div class="cart-header">
               <h3>Carrito</h3>
               <div style="display:flex;gap:6px;align-items:center">
-                <button style="font-size:12px;padding:5px 10px;border-radius:7px;background:transparent;
-                             border:1px solid var(--border);cursor:pointer;color:var(--text2);
-                             font-family:'DM Sans',sans-serif" onclick="guardarVentaAbierta()">
+                <button class="btn-icon" title="Ventas guardadas" onclick="abrirModalGuardados()"
+                  style="background:var(--surface-sub); border:1px solid var(--border)">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <button style="font-size:12px;padding:5px 10px;border-radius:7px;background:var(--primary-light);
+                               border:1px solid var(--primary);cursor:pointer;color:var(--primary-dark);
+                               font-family:'DM Sans',sans-serif; font-weight:600" onclick="guardarVentaAbierta()">
                   Guardar
                 </button>
                 <button class="btn-icon" title="Vaciar carrito" onclick="limpiarCarrito()">
@@ -122,9 +124,9 @@
               <p style="font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px;
                       letter-spacing:0.03em;text-transform:uppercase">Cliente (opcional)</p>
               <select id="cart-cliente" style="width:100%;padding:8px 12px;border:1px solid var(--border2);
-                           border-radius:var(--radius);font-size:13.5px;
-                           font-family:'DM Sans',sans-serif;background:var(--surface);
-                           color:var(--text);outline:none;margin-bottom:12px">
+                             border-radius:var(--radius);font-size:13.5px;
+                             font-family:'DM Sans',sans-serif;background:var(--surface);
+                             color:var(--text);outline:none;margin-bottom:12px">
                 <option value="">Sin cliente</option>
               </select>
 
@@ -133,6 +135,27 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-guardados" class="modal">
+      <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+          <h3 style="display:flex; align-items:center; gap:8px">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Ventas en Espera
+          </h3>
+          <button class="btn-icon" onclick="cerrarModal('modal-guardados')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 0;">
+          <div id="lista-ventas-guardadas">
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content: center;">
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-guardados')">Cerrar</button>
         </div>
       </div>
     </div>

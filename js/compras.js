@@ -208,51 +208,46 @@ async function guardarCompra() {
   if (!proveedor) { toast('Selecciona un proveedor', 'error'); return; }
   if (!compraItems.length) { toast('Agrega al menos un producto', 'error'); return; }
 
-  const total = compraItems.reduce((sum, x) => sum + (Number(x.cantidad) * Number(x.costo)), 0);
+  const fecha = document.getElementById('compra-fecha').value;
   const compraId = document.getElementById('compra-id').value;
 
   try {
-    // 1. REGISTRAR CATEGORÍAS (Esto ya te funciona)
+    // 1. REGISTRAR CATEGORÍAS
     const categoriasUnicas = [...new Set(compraItems.map(x => x.categoria).filter(c => c))];
     for (const cat of categoriasUnicas) {
       await apiPost('categorias', { nombre: cat });
     }
 
-    // 2. REGISTRAR CADA PRODUCTO EN LA HOJA "PRODUCTOS"
-    // Hacemos un envío por cada producto para que aparezcan en la hoja de Productos
+    // 2. REGISTRAR EN LA HOJA DE PRODUCTOS (Actualizar stock/precio)
     for (const item of compraItems) {
       await apiPost('productos', {
         nombre: item.nombre,
         categoria: item.categoria,
-        costo: item.costo,   // Costo de compra
-        precio: item.venta,  // Precio de venta
-        stock: item.cantidad // Lo que acabas de comprar
+        costo: item.costo,   
+        precio: item.venta,  
+        stock: item.cantidad 
       });
     }
 
-    // 3. REGISTRAR LA COMPRA (Lo que ya hacias)
-    const compra = {
-      id: compraId,
-      ID: compraId,
-      fecha: document.getElementById('compra-fecha').value,
-      proveedor,
-      productos: JSON.stringify(compraItems.map(x => ({
-        nombre: x.nombre,
-        categoria: x.categoria,
-        cantidad: x.cantidad,
-        costo: x.costo,
-        venta: x.venta 
-      }))),
-      totalcosto: total
-    };
-
-    const result = await apiPost('compras', compra);
-    
-    if (result.ok || result.success) {
-      toast('Compra y productos guardados en sus hojas');
-      cerrarModal('modal-compra');
-      loadCompras();
+    // 3. REGISTRAR EN LA HOJA DE COMPRAS (UNA FILA POR PRODUCTO)
+    // En lugar de enviar un solo objeto con JSON.stringify, 
+    // enviamos una petición por cada producto.
+    for (const item of compraItems) {
+      const filaCompra = {
+        id: compraId, // Mismo ID de compra para agruparlos visualmente
+        fecha: fecha,
+        proveedor: proveedor,
+        productos: item.nombre, // Solo el nombre del producto
+        totalcosto: item.costo * item.cantidad // Costo de esta línea
+      };
+      
+      await apiPost('compras', filaCompra);
     }
+
+    toast('Compra y productos guardados correctamente');
+    cerrarModal('modal-compra');
+    loadCompras();
+    
   } catch (e) {
     console.error(e);
     toast('Error al sincronizar con Sheets', 'error');

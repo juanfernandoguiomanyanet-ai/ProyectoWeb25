@@ -42,47 +42,119 @@ function mostrarLoadingCatalogo(mostrar) {
   document.getElementById('products-grid').style.display = mostrar ? 'none' : 'grid';
 }
 
-// ─── VENTA ABIERTA ───────────────────────────────────────
+// --- LÓGICA DE VENTAS GUARDADAS ---
 
-function checkVentaAbierta() {
-  const guardada = localStorage.getItem('ventaAbierta');
-  if (guardada) {
-    ventaAbierta = JSON.parse(guardada);
-    document.getElementById('venta-abierta-bar').style.display = 'flex';
-    document.getElementById('venta-abierta-id').textContent = ventaAbierta.id;
-  }
+function abrirModalGuardados() {
+  renderListaGuardados();
+  abrirModal('modal-guardados');
 }
 
+function renderListaGuardados() {
+  const listaContenedor = document.getElementById('lista-ventas-guardadas');
+  const ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+
+  if (ventas.length === 0) {
+    listaContenedor.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">No hay ventas guardadas.</p>';
+    return;
+  }
+
+  listaContenedor.innerHTML = ventas.map((v, index) => `
+    <div class="item-guardado" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+      <div>
+        <div style="font-weight:bold; color:var(--primary);">${v.id}</div>
+        <div style="font-size:12px; color:gray;">${new Date(v.ts).toLocaleTimeString()} - ${v.items.length} productos</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-sm btn-success" onclick="retomarVentaEspecifica(${index})">Continuar</button>
+        <button class="btn-sm btn-danger" onclick="eliminarVentaGuardada(${index})">Eliminar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function retomarVentaEspecifica(index) {
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  const v = ventas[index];
+
+  if (!v) return;
+
+  // Cargar al carrito
+  carrito = [...v.items];
+  metodoPago = v.metodoPago || 'Efectivo';
+
+  // Eliminar de la lista de guardados porque ya se retomó
+  ventas.splice(index, 1);
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+
+  // Actualizar UI
+  renderCarrito();
+  checkVentaAbierta();
+  cerrarModal('modal-guardados');
+  toast('Venta retomada: ' + v.id);
+}
+
+function eliminarVentaGuardada(index) {
+  if (!confirm('¿Seguro que quieres eliminar esta venta guardada?')) return;
+  
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  ventas.splice(index, 1);
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+  
+  renderListaGuardados();
+  checkVentaAbierta();
+  toast('Venta guardada eliminada', 'warning');
+}
+
+// Modificamos la función de guardar para que limpie el carrito siempre
 function guardarVentaAbierta() {
   if (!carrito.length) { toast('El carrito está vacío', 'error'); return; }
 
-  const va = { id: 'V-' + uid(), items: carrito, metodoPago, ts: Date.now() };
-  localStorage.setItem('ventaAbierta', JSON.stringify(va));
-  ventaAbierta = va;
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  const nuevaVA = { 
+    id: 'V-' + uid(), 
+    items: [...carrito], 
+    metodoPago, 
+    ts: Date.now() 
+  };
 
-  document.getElementById('venta-abierta-bar').style.display = 'flex';
-  document.getElementById('venta-abierta-id').textContent = va.id;
-  toast('Venta guardada como abierta');
+  ventas.push(nuevaVA);
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+  
+  limpiarCarrito(); // Importante: vaciar para el siguiente cliente
+  checkVentaAbierta();
+  toast('Venta guardada en la lista');
 }
 
 function retomar() {
-  if (!ventaAbierta) return;
-  carrito = [...ventaAbierta.items];
-  metodoPago = ventaAbierta.metodoPago || 'Efectivo';
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  if (ventas.length === 0) return;
+
+  // Si hay más de una, podrías implementar un modal, 
+  // pero por ahora retomaremos la ÚLTIMA guardada (tipo Pila)
+  const v = ventas.pop();
+
+  carrito = [...v.items];
+  metodoPago = v.metodoPago || 'Efectivo';
+
+  // Actualizar localStorage con las que quedan
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
 
   document.querySelectorAll('.pay-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.textContent.trim().startsWith(metodoPago.slice(0, 5)));
   });
 
   renderCarrito();
+  checkVentaAbierta();
   toast('Venta retomada');
 }
 
 function descartarVentaAbierta() {
-  localStorage.removeItem('ventaAbierta');
+  // Eliminamos solo la última o todas? 
+  // Por seguridad de tu flujo, limpiaremos todas las pendientes:
+  localStorage.removeItem('ventasAbiertas');
   ventaAbierta = null;
   document.getElementById('venta-abierta-bar').style.display = 'none';
-  toast('Venta descartada', 'warning');
+  toast('Todas las ventas guardadas han sido borradas', 'warning');
 }
 
 // ─── CATÁLOGO ────────────────────────────────────────────
