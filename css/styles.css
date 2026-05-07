@@ -7,6 +7,16 @@
   margin: 0;
   padding: 0;
 }
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+.btn-success { background-color: #28a745; color: white; }
+.btn-danger { background-color: #dc3545; color: white; }
+.item-guardado:hover { background-color: #f9f9f9; }
 
 :root {
   --bg: #f8f2e6;

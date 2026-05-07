@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
-   js/ventas.js — Módulo de Punto de Venta
-   ═══════════════════════════════════════ */
+ js/ventas.js — Módulo de Punto de Venta
+ ═══════════════════════════════════════ */
 
 // ─── ESTADO LOCAL ────────────────────────────────────────
 let carrito = [];
@@ -11,12 +11,13 @@ let prodFiltrados = [];
 // ─── INICIALIZACIÓN ──────────────────────────────────────
 
 /**
- * Carga productos y clientes si no están en memoria,
- * renderiza el catálogo y verifica si hay venta abierta guardada.
- */
+* Carga productos y clientes si no están en memoria,
+* renderiza el catálogo y verifica si hay venta abierta guardada.
+*/
 async function initVentas() {
   if (!state.productos.length) {
     mostrarLoadingCatalogo(true);
+    // Cambio: apiGet devuelve el array directamente
     const data = await apiGet('productos');
     state.productos = data;
     prodFiltrados = [...data];
@@ -38,74 +39,137 @@ async function initVentas() {
 
 function mostrarLoadingCatalogo(mostrar) {
   document.getElementById('catalog-loading').style.display = mostrar ? 'flex' : 'none';
-  document.getElementById('products-grid').style.display  = mostrar ? 'none' : 'grid';
+  document.getElementById('products-grid').style.display = mostrar ? 'none' : 'grid';
 }
 
-// ─── VENTA ABIERTA ───────────────────────────────────────
+// --- LÓGICA DE VENTAS GUARDADAS ---
 
-/** Verifica si hay una venta guardada en localStorage y muestra la barra de aviso */
-function checkVentaAbierta() {
-  const guardada = localStorage.getItem('ventaAbierta');
-  if (guardada) {
-    ventaAbierta = JSON.parse(guardada);
-    document.getElementById('venta-abierta-bar').style.display = 'flex';
-    document.getElementById('venta-abierta-id').textContent = ventaAbierta.id;
+function abrirModalGuardados() {
+  renderListaGuardados();
+  abrirModal('modal-guardados');
+}
+
+function renderListaGuardados() {
+  const listaContenedor = document.getElementById('lista-ventas-guardadas');
+  const ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+
+  if (ventas.length === 0) {
+    listaContenedor.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">No hay ventas guardadas.</p>';
+    return;
   }
+
+  listaContenedor.innerHTML = ventas.map((v, index) => `
+    <div class="item-guardado" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+      <div>
+        <div style="font-weight:bold; color:var(--primary);">${v.id}</div>
+        <div style="font-size:12px; color:gray;">${new Date(v.ts).toLocaleTimeString()} - ${v.items.length} productos</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-sm btn-success" onclick="retomarVentaEspecifica(${index})">Continuar</button>
+        <button class="btn-sm btn-danger" onclick="eliminarVentaGuardada(${index})">Eliminar</button>
+      </div>
+    </div>
+  `).join('');
 }
 
-/** Guarda el carrito actual como venta abierta en localStorage */
+function retomarVentaEspecifica(index) {
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  const v = ventas[index];
+
+  if (!v) return;
+
+  // Cargar al carrito
+  carrito = [...v.items];
+  metodoPago = v.metodoPago || 'Efectivo';
+
+  // Eliminar de la lista de guardados porque ya se retomó
+  ventas.splice(index, 1);
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+
+  // Actualizar UI
+  renderCarrito();
+  checkVentaAbierta();
+  cerrarModal('modal-guardados');
+  toast('Venta retomada: ' + v.id);
+}
+
+function eliminarVentaGuardada(index) {
+  if (!confirm('¿Seguro que quieres eliminar esta venta guardada?')) return;
+  
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  ventas.splice(index, 1);
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+  
+  renderListaGuardados();
+  checkVentaAbierta();
+  toast('Venta guardada eliminada', 'warning');
+}
+
+// Modificamos la función de guardar para que limpie el carrito siempre
 function guardarVentaAbierta() {
   if (!carrito.length) { toast('El carrito está vacío', 'error'); return; }
 
-  const va = { id: 'V-' + uid(), items: carrito, metodoPago, ts: Date.now() };
-  localStorage.setItem('ventaAbierta', JSON.stringify(va));
-  ventaAbierta = va;
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  const nuevaVA = { 
+    id: 'V-' + uid(), 
+    items: [...carrito], 
+    metodoPago, 
+    ts: Date.now() 
+  };
 
-  document.getElementById('venta-abierta-bar').style.display = 'flex';
-  document.getElementById('venta-abierta-id').textContent = va.id;
-  toast('Venta guardada como abierta');
+  ventas.push(nuevaVA);
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+  
+  limpiarCarrito(); // Importante: vaciar para el siguiente cliente
+  checkVentaAbierta();
+  toast('Venta guardada en la lista');
 }
 
-/** Carga la venta abierta al carrito para continuar editándola */
 function retomar() {
-  if (!ventaAbierta) return;
-  carrito = [...ventaAbierta.items];
-  metodoPago = ventaAbierta.metodoPago || 'Efectivo';
+  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  if (ventas.length === 0) return;
+
+  // Si hay más de una, podrías implementar un modal, 
+  // pero por ahora retomaremos la ÚLTIMA guardada (tipo Pila)
+  const v = ventas.pop();
+
+  carrito = [...v.items];
+  metodoPago = v.metodoPago || 'Efectivo';
+
+  // Actualizar localStorage con las que quedan
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
 
   document.querySelectorAll('.pay-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.textContent.trim().startsWith(metodoPago.slice(0, 5)));
   });
 
   renderCarrito();
+  checkVentaAbierta();
   toast('Venta retomada');
 }
 
-/** Descarta la venta abierta guardada */
 function descartarVentaAbierta() {
-  localStorage.removeItem('ventaAbierta');
+  // Eliminamos solo la última o todas? 
+  // Por seguridad de tu flujo, limpiaremos todas las pendientes:
+  localStorage.removeItem('ventasAbiertas');
   ventaAbierta = null;
   document.getElementById('venta-abierta-bar').style.display = 'none';
-  toast('Venta descartada', 'warning');
+  toast('Todas las ventas guardadas han sido borradas', 'warning');
 }
 
 // ─── CATÁLOGO ────────────────────────────────────────────
 
-/** Renderiza las tarjetas de productos filtrados */
 function renderCatalog() {
   renderProductCards(prodFiltrados.length ? prodFiltrados : state.productos);
 }
 
-/**
- * Dibuja las tarjetas de producto en el grid
- * @param {Array} lista
- */
 function renderProductCards(lista) {
   const grid = document.getElementById('products-grid');
 
   if (!lista.length) {
     grid.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:32px">
-      <p>Sin productos que mostrar</p>
-    </div>`;
+   <p>Sin productos que mostrar</p>
+  </div>`;
     return;
   }
 
@@ -115,19 +179,18 @@ function renderProductCards(lista) {
     const codigoKey = p.codigo || p.nombre;
 
     return `<div class="product-card ${stockClass}" onclick="addToCart('${codigoKey}')">
-      <div class="cat-dot"></div>
-      <div class="name">${p.nombre || 'Sin nombre'}</div>
-      <div class="price">${fmt(p.precio)}</div>
-      <div class="stock ${stockClass}">Stock: ${stock}</div>
-      <div class="edit-prod-trigger"
-           onclick="event.stopPropagation(); abrirEditProdVenta('${codigoKey}')">
-        Editar
-      </div>
-    </div>`;
+   <div class="cat-dot"></div>
+   <div class="name">${p.nombre || 'Sin nombre'}</div>
+   <div class="price">${fmt(p.precio)}</div>
+   <div class="stock ${stockClass}">Stock: ${stock}</div>
+   <div class="edit-prod-trigger"
+     onclick="event.stopPropagation(); abrirEditProdVenta('${codigoKey}')">
+    Editar
+   </div>
+  </div>`;
   }).join('');
 }
 
-/** Llena el select de filtro de categorías a partir de los productos cargados */
 function poblarFilterCat() {
   const sel = document.getElementById('filter-cat');
   const cats = [...new Set(state.productos.map(p => p.categoria).filter(Boolean))];
@@ -139,10 +202,9 @@ function poblarFilterCat() {
   });
 }
 
-/** Filtra el catálogo según búsqueda de texto y categoría seleccionada */
 function filtrarProductos() {
   const query = document.getElementById('search-prod').value.toLowerCase();
-  const cat   = document.getElementById('filter-cat').value;
+  const cat = document.getElementById('filter-cat').value;
 
   prodFiltrados = state.productos.filter(p => {
     const matchQuery = !query
@@ -157,15 +219,11 @@ function filtrarProductos() {
 
 // ─── CARRITO ─────────────────────────────────────────────
 
-/**
- * Agrega un producto al carrito o incrementa su cantidad
- * @param {string} codigo
- */
 function addToCart(codigo) {
   const producto = state.productos.find(p => (p.codigo || p.nombre) === codigo);
   if (!producto) return;
 
-  const stock    = Number(producto.stock || 0);
+  const stock = Number(producto.stock || 0);
   const enCarrito = carrito.find(x => x.codigo === codigo);
 
   if (enCarrito) {
@@ -178,10 +236,10 @@ function addToCart(codigo) {
     if (stock === 0) { toast('Producto sin stock', 'error'); return; }
     carrito.push({
       codigo,
-      nombre:    producto.nombre,
-      precio:    Number(producto.precio),
+      nombre: producto.nombre,
+      precio: Number(producto.precio),
       categoria: producto.categoria || '',
-      qty:       1,
+      qty: 1,
       stock
     });
   }
@@ -189,11 +247,6 @@ function addToCart(codigo) {
   renderCarrito();
 }
 
-/**
- * Cambia la cantidad de un ítem del carrito. Si llega a 0, lo elimina.
- * @param {string} codigo
- * @param {number} delta - +1 o -1
- */
 function changeQty(codigo, delta) {
   const idx = carrito.findIndex(x => x.codigo === codigo);
   if (idx < 0) return;
@@ -204,68 +257,60 @@ function changeQty(codigo, delta) {
   renderCarrito();
 }
 
-/** Vacía el carrito completo */
 function limpiarCarrito() {
   carrito = [];
   renderCarrito();
 }
 
-/** Re-dibuja la lista del carrito y actualiza totales */
 function renderCarrito() {
   const el = document.getElementById('cart-items');
 
   if (!carrito.length) {
     el.innerHTML = `<div class="empty" style="padding:32px 0">
-      <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <path d="M16 10a4 4 0 01-8 0"/>
-      </svg>
-      <p style="margin-top:8px;font-size:13px">Agrega productos al carrito</p>
-    </div>`;
-    document.getElementById('subtotal').textContent    = '$0';
+   <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <path d="M16 10a4 4 0 01-8 0"/>
+   </svg>
+   <p style="margin-top:8px;font-size:13px">Agrega productos al carrito</p>
+  </div>`;
+    document.getElementById('subtotal').textContent = '$0';
     document.getElementById('total-cart').textContent = '$0';
     return;
   }
 
   el.innerHTML = carrito.map(item => `
-    <div class="cart-item">
-      <div style="flex:1;min-width:0">
-        <div class="item-name">${item.nombre}</div>
-        <div class="item-cat">${item.categoria}</div>
-      </div>
-      <div class="qty-ctrl">
-        <button onclick="changeQty('${item.codigo}', -1)">−</button>
-        <span>${item.qty}</span>
-        <button onclick="changeQty('${item.codigo}', +1)">+</button>
-      </div>
-      <div class="item-total">${fmt(item.precio * item.qty)}</div>
-    </div>
-  `).join('');
+  <div class="cart-item">
+   <div style="flex:1;min-width:0">
+    <div class="item-name">${item.nombre}</div>
+    <div class="item-cat">${item.categoria}</div>
+   </div>
+   <div class="qty-ctrl">
+    <button onclick="changeQty('${item.codigo}', -1)">−</button>
+    <span>${item.qty}</span>
+    <button onclick="changeQty('${item.codigo}', +1)">+</button>
+   </div>
+   <div class="item-total">${fmt(item.precio * item.qty)}</div>
+  </div>
+ `).join('');
 
   const total = carrito.reduce((sum, x) => sum + (x.precio * x.qty), 0);
-  document.getElementById('subtotal').textContent    = fmt(total);
+  document.getElementById('subtotal').textContent = fmt(total);
   document.getElementById('total-cart').textContent = fmt(total);
 }
 
-/**
- * Marca el método de pago seleccionado
- * @param {HTMLElement} btn
- * @param {string} metodo
- */
 function selPago(btn, metodo) {
   metodoPago = metodo;
   document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
 }
 
-/** Llena el select de clientes en el carrito */
 function poblarSelectClientes() {
   const sel = document.getElementById('cart-cliente');
   sel.innerHTML = '<option value="">Sin cliente</option>';
   state.clientes.forEach(c => {
     const opt = document.createElement('option');
-    opt.value       = c.id || c.nombre;
+    opt.value = c.id || c.ID || c.nombre;
     opt.textContent = c.nombre;
     sel.appendChild(opt);
   });
@@ -273,29 +318,33 @@ function poblarSelectClientes() {
 
 // ─── COBRAR VENTA ────────────────────────────────────────
 
-/** Envía la venta al Google Sheets y limpia el carrito */
 async function cobrar() {
   if (!carrito.length) { toast('El carrito está vacío', 'error'); return; }
 
   const total = carrito.reduce((sum, x) => sum + (x.precio * x.qty), 0);
+  const ventaId = 'VT-' + uid();
 
   const venta = {
-    'N venta': 'VT-' + uid(),
-    fecha:     new Date().toLocaleString('es-CO'),
-    items:     JSON.stringify(carrito.map(x => ({ n: x.nombre, q: x.qty, p: x.precio }))),
+    id: ventaId, // Cambio: necesario para la llave del Apps Script
+    'N venta': ventaId,
+    fecha: new Date().toLocaleString('es-CO'),
+    items: JSON.stringify(carrito.map(x => ({ n: x.nombre, q: x.qty, p: x.precio }))),
     total,
-    metodo:    metodoPago,
+    metodo: metodoPago,
     clienteId: document.getElementById('cart-cliente').value || ''
   };
 
   try {
+    // Apuntamos a 'historial' que es donde se guardan las ventas
     const result = await apiPost('historial', venta);
-    if (result.success) {
+    // Cambio: Google responde con ok o success
+    if (result.ok || result.success) {
       toast('¡Venta registrada correctamente!');
       limpiarCarrito();
       if (ventaAbierta) descartarVentaAbierta();
     } else {
-      toast('Error al registrar: ' + (result.message || ''), 'error');
+      // Cambio: Google manda el error en .error o .message
+      toast('Error al registrar: ' + (result.error || result.message || ''), 'error');
     }
   } catch (e) {
     toast('Error de conexión con el servidor', 'error');
@@ -304,10 +353,6 @@ async function cobrar() {
 
 // ─── EDITAR PRODUCTO DESDE VENTA ─────────────────────────
 
-/**
- * Abre el modal de edición rápida de un producto desde el flujo de venta
- * @param {string} codigo
- */
 function abrirEditProdVenta(codigo) {
   const p = state.productos.find(x => (x.codigo || x.nombre) === codigo);
   if (!p) return;
@@ -315,32 +360,29 @@ function abrirEditProdVenta(codigo) {
   document.getElementById('epv-codigo').value = codigo;
   document.getElementById('epv-nombre').value = p.nombre;
   document.getElementById('epv-precio').value = p.precio;
-  document.getElementById('epv-stock').value  = p.stock;
+  document.getElementById('epv-stock').value = p.stock;
 
   abrirModal('modal-edit-prod-venta');
 }
 
-/** Aplica los cambios del modal de edición rápida sin llamar a la API (solo UI) */
 async function guardarEditProdVenta() {
   const codigo = document.getElementById('epv-codigo').value;
   const nombre = document.getElementById('epv-nombre').value;
   const precio = Number(document.getElementById('epv-precio').value);
-  const stock  = Number(document.getElementById('epv-stock').value);
+  const stock = Number(document.getElementById('epv-stock').value);
 
-  // Actualizar estado global
   const idx = state.productos.findIndex(x => (x.codigo || x.nombre) === codigo);
   if (idx >= 0) {
     state.productos[idx].nombre = nombre;
     state.productos[idx].precio = precio;
-    state.productos[idx].stock  = stock;
+    state.productos[idx].stock = stock;
   }
 
-  // Actualizar carrito si el producto estaba en él
   const ci = carrito.findIndex(x => x.codigo === codigo);
   if (ci >= 0) {
     carrito[ci].nombre = nombre;
     carrito[ci].precio = precio;
-    carrito[ci].stock  = stock;
+    carrito[ci].stock = stock;
   }
 
   filtrarProductos();
