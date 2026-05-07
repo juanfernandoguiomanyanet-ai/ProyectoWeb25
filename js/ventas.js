@@ -45,9 +45,21 @@ function mostrarLoadingCatalogo(mostrar) {
 // --- LÓGICA DE VENTAS GUARDADAS ---
 
 function abrirModalGuardados() {
-  renderListaGuardados(); // Primero cargamos los datos
-  const modal = document.getElementById('modal-guardados');
-  modal.classList.add('active'); // Agregamos la clase para mostrarlo
+    renderListaGuardados(); // Dibuja las ventas que hay en el localStorage
+    const modal = document.getElementById('modal-guardados');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Para que el botón de las 3 líneas sea un "Abrir/Cerrar"
+function toggleListaGuardados() {
+    const modal = document.getElementById('modal-guardados');
+    if (modal.style.display === 'flex') {
+        modal.style.display = 'none';
+    } else {
+        abrirModalGuardados();
+    }
 }
 
 function cerrarModal(id) {

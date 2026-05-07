@@ -609,67 +609,36 @@ tr:hover td { background: var(--surface2); }
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
 }
 /* Usamos el ID para no afectar a otros modales */
+/* Estilo para que el modal flote y esté centrado */
 #modal-guardados {
-  /* Esto lo saca del flujo de la página y lo oculta por defecto */
-  display: none; 
-  position: fixed; /* Lo hace flotar sobre todo */
-  z-index: 9999;   /* Asegura que esté al frente */
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  
-  /* Centrado total */
-  align-items: center;
-  justify-content: center;
-  
-  /* Fondo oscuro y desenfoque */
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    
+    /* Centrado */
+    align-items: center;
+    justify-content: center;
 }
 
-/* Esta es la clave: Cuando el JS le de la orden de abrirse, 
-   usaremos flex para que se centre */
+/* LA CLAVE: Esta regla obliga a mostrarse cuando el JS lo activa */
 #modal-guardados[style*="display: block"],
 #modal-guardados[style*="display: flex"] {
     display: flex !important;
 }
 
-/* Estilo para la cajita blanca interna */
+/* Diseño de la ventana blanca interna */
 #modal-guardados .modal-content {
-  background: #f8fafc;
-  border-radius: 20px;
-  padding: 25px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-  position: relative;
-  border: none;
-}
-
-/* Arreglo de la X fea sin tocar el HTML */
-#modal-guardados .modal-header button, 
-#modal-guardados .btn-icon[onclick*="cerrarModal"] {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: #e2e8f0;
-  border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  cursor: pointer;
-  color: #64748b;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-/* Quitar bordes feos de la lista */
-#lista-ventas-guardadas {
-    margin-top: 10px;
-    border-radius: 12px;
-    overflow: hidden;
+    background: #f8fafc;
+    padding: 25px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
 }
