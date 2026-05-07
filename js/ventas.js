@@ -51,25 +51,43 @@ function abrirModalGuardados() {
 
 function renderListaGuardados() {
   const listaContenedor = document.getElementById('lista-ventas-guardadas');
+  // Leemos todas las ventas del storage
   const ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
 
+  // Limpiamos el contenedor antes de dibujar
+  listaContenedor.innerHTML = '';
+
   if (ventas.length === 0) {
-    listaContenedor.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">No hay ventas guardadas.</p>';
+    listaContenedor.innerHTML = '<p style="text-align:center; padding:32px; color:gray;">No hay ventas en espera</p>';
     return;
   }
 
-  listaContenedor.innerHTML = ventas.map((v, index) => `
-    <div class="item-guardado" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-      <div>
-        <div style="font-weight:bold; color:var(--primary);">${v.id}</div>
-        <div style="font-size:12px; color:gray;">${new Date(v.ts).toLocaleTimeString()} - ${v.items.length} productos</div>
+  // Generamos el HTML para CADA venta guardada
+  const htmlPlano = ventas.map((v, index) => {
+    return `
+      <div class="item-guardado" style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom:1px solid var(--border); background:white;">
+        <div style="flex:1">
+          <div style="font-weight:bold; color:var(--primary); margin-bottom:2px;">${v.id}</div>
+          <div style="font-size:12px; color:var(--text2);">
+            <span style="background:#f0f0f0; padding:2px 6px; border-radius:4px; margin-right:5px;">
+              ${new Date(v.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </span>
+            ${v.items.length} productos — <strong>${metodoPago}</strong>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-primary" onclick="retomarVentaEspecifica(${index})" style="padding:6px 10px">
+            Retomar
+          </button>
+          <button class="btn btn-sm" onclick="eliminarVentaGuardada(${index})" style="background:#fee2e2; color:#b91c1c; border:none; padding:6px 10px; cursor:pointer; border-radius:4px;">
+            Borrar
+          </button>
+        </div>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-sm btn-success" onclick="retomarVentaEspecifica(${index})">Continuar</button>
-        <button class="btn-sm btn-danger" onclick="eliminarVentaGuardada(${index})">Eliminar</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+
+  listaContenedor.innerHTML = htmlPlano;
 }
 
 function retomarVentaEspecifica(index) {
@@ -109,20 +127,25 @@ function eliminarVentaGuardada(index) {
 function guardarVentaAbierta() {
   if (!carrito.length) { toast('El carrito está vacío', 'error'); return; }
 
-  let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
-  const nuevaVA = { 
+  // IMPORTANTE: Obtener las que ya existen primero
+  let ventasActuales = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  
+  const nuevaVenta = { 
     id: 'V-' + uid(), 
-    items: [...carrito], 
+    items: [...carrito], // Copia profunda del carrito
     metodoPago, 
     ts: Date.now() 
   };
 
-  ventas.push(nuevaVA);
-  localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
+  // Agregar la nueva al final del arreglo
+  ventasActuales.push(nuevaVenta);
   
-  limpiarCarrito(); // Importante: vaciar para el siguiente cliente
+  // Guardar el arreglo completo de nuevo
+  localStorage.setItem('ventasAbiertas', JSON.stringify(ventasActuales));
+  
+  limpiarCarrito();
   checkVentaAbierta();
-  toast('Venta guardada en la lista');
+  toast('Venta guardada en la lista de espera');
 }
 
 function retomar() {
