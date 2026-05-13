@@ -44,35 +44,36 @@ function mostrarLoadingCatalogo(mostrar) {
 
 // --- LÓGICA DE VENTAS GUARDADAS ---
 
-function abrirModalGuardados() {
-    renderListaGuardados(); // Dibuja las ventas que hay en el localStorage
-    const modal = document.getElementById('modal-guardados');
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
-
-// Para que el botón de las 3 líneas sea un "Abrir/Cerrar"
 function toggleListaGuardados() {
     const modal = document.getElementById('modal-guardados');
     if (modal.style.display === 'flex') {
-        modal.style.display = 'none';
+        cerrarModal('modal-guardados');
     } else {
         abrirModalGuardados();
     }
 }
 
-function cerrarModal(id) {
+// Función genérica para abrir (asegúrate de tenerla)
+function abrirModal(id) {
   const modal = document.getElementById(id);
-  modal.classList.remove('active'); // Quitamos la clase para ocultarlo
+  if (modal) modal.style.display = 'flex';
 }
 
-// Opcional: Cerrar si el usuario hace clic fuera de la ventana blanca
-window.onclick = function(event) {
-  const modal = document.getElementById('modal-guardados');
-  if (event.target == modal) {
-    cerrarModal('modal-guardados');
+// Función genérica para cerrar (CORREGIDA)
+function cerrarModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'none';
   }
+}
+
+// Cerrar al hacer clic fuera del contenido
+window.onclick = function(event) {
+  const modalGuardados = document.getElementById('modal-guardados');
+  const modalEdit = document.getElementById('modal-edit-prod-venta');
+  
+  if (event.target == modalGuardados) cerrarModal('modal-guardados');
+  if (event.target == modalEdit) cerrarModal('modal-edit-prod-venta');
 }
 
 function renderListaGuardados() {
