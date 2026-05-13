@@ -40,24 +40,28 @@ function renderClientes(data) {
 }
 
 function abrirModalCliente() {
-  // 1. Cambiamos el título del modal
+  // 1. Validar que el título exista antes de cambiarlo
   const titulo = document.getElementById('modal-clie-title');
-  if (titulo) titulo.textContent = 'Nuevo Cliente';
+  if (titulo) {
+    titulo.textContent = 'Nuevo cliente';
+  }
 
-  // 2. Limpiamos los campos para que no aparezca info vieja
-  document.getElementById('clie-edit-id').value = '';
-  document.getElementById('clie-id').value = 'CL-' + uid(); // Genera ID nuevo
-  document.getElementById('clie-nombre').value = '';
-  document.getElementById('clie-tel').value = '';
-  document.getElementById('clie-email').value = '';
+  // 2. Limpiar campos (asegúrate de que estos IDs existan en tu HTML)
+  const editId = document.getElementById('clie-edit-id');
+  const inputId = document.getElementById('clie-id');
+  const nombre = document.getElementById('clie-nombre');
 
-  // 3. MOSTRAMOS EL MODAL
-  // Usamos 'flex' para que las reglas de centrado del CSS funcionen
+  if (editId) editId.value = '';
+  if (inputId) inputId.value = 'CL-' + uid();
+  if (nombre) nombre.value = '';
+
+  // 3. Abrir el modal usando el ID del contenedor principal
+  // Tu contenedor se llama "modal-cliente"
   const modal = document.getElementById('modal-cliente');
   if (modal) {
-    modal.style.display = 'flex';
+    modal.style.display = 'flex'; // Usamos flex para que se centre
   } else {
-    console.error("No se encontró el elemento con ID 'modal-cliente'");
+    console.error("No se encontró el contenedor modal-cliente");
   }
 }
 
