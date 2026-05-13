@@ -49,18 +49,43 @@ function toast(msg, type = 'success') {
 * Abre un modal por su ID
 * @param {string} id
 */
+/**
+* Abre un modal por su ID
+* @param {string} id
+*/
 function abrirModal(id) {
- const modal = document.getElementById(id);
-  if (modal) modal.classList.add('open');
+  const modal = document.getElementById(id);
+  if (modal) {
+    // Usamos display flex para asegurar que se vea, 
+    // y añadimos la clase por si tienes animaciones en CSS
+    modal.style.display = 'flex'; 
+    modal.classList.add('open');
+    modal.classList.add('active'); 
+  }
 }
 
 /**
 * Cierra un modal por su ID
-* @param {string} id
 */
 function cerrarModal(id) {
- const modal = document.getElementById(id);
-  if (modal) modal.classList.remove('open');
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'none'; // Esto lo oculta sí o sí
+    modal.classList.remove('open');
+    modal.classList.remove('active');
+  }
+}
+
+// Opcional: Cerrar modales al hacer clic en el fondo oscuro
+window.onclick = function(event) {
+  // Si el usuario hace clic en un elemento con clase 'modal-bg', lo cerramos
+  if (event.target.classList.contains('modal-bg')) {
+    cerrarModal(event.target.id);
+  }
+  // Caso especial para el modal de guardados que no tiene modal-bg
+  if (event.target.id === 'modal-guardados') {
+    cerrarModal('modal-guardados');
+  }
 }
 
 /**

@@ -462,4 +462,9 @@ function checkVentaAbierta() {
       bar.style.display = 'none';
     }
   }
+  
+}
+function abrirModalGuardados() {
+    renderListaGuardados(); 
+    abrirModal('modal-guardados'); // Usa la función de utils.js
 }
