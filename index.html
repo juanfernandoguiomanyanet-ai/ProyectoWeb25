@@ -364,32 +364,44 @@
       </div>
     </div>
 
-    <div class="modal" id="modal-cliente" style="display:none">
-      <div class="modal-content">
-        <h3 id="modal-clie-title">Nuevo cliente</h3>
-        <input type="hidden" id="clie-edit-id">
-        <div class="form-group">
-          <label>ID Cliente</label>
-          <input type="text" id="clie-id" readonly>
-        </div>
-        <div class="form-group">
-          <label>Nombre</label>
-          <input type="text" id="clie-nombre" placeholder="Nombre completo">
-        </div>
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input type="text" id="clie-tel" placeholder="Opcional">
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="text" id="clie-email" placeholder="Opcional">
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="cerrarModal('modal-cliente')">Cancelar</button>
-          <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
-        </div>
+    <div id="modal-cliente" class="modal" style="display:none;">
+  
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-clie-title">Nuevo cliente</h3>
+      <button class="btn-close" onclick="cerrarModal('modal-cliente')">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <input type="hidden" id="clie-edit-id">
+      
+      <div class="form-group">
+        <label>ID Cliente</label>
+        <input type="text" id="clie-id" readonly class="form-control">
+      </div>
+      
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" id="clie-nombre" placeholder="Nombre completo" class="form-control">
+      </div>
+      
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="clie-tel" placeholder="Opcional" class="form-control">
+      </div>
+      
+      <div class="form-group">
+        <label>Email</label>
+        <input type="text" id="clie-email" placeholder="Opcional" class="form-control">
       </div>
     </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
 
   </main>
 
