@@ -1,0 +1,37 @@
+const API_URL = "http://localhost:3000/api";
+
+export async function api(endpoint, method = "GET", body = null) {
+  try {
+    const options = {
+      method,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+
+    let data = null;
+
+    try {
+      data = await res.json();
+    } catch (e) {
+      data = null;
+    }
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Error en la petición");
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error("API ERROR:", error.message);
+    alert(error.message); // reemplaza cualquier toast
+    throw error;
+  }
+}
