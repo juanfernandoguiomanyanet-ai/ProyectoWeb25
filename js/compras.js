@@ -213,33 +213,29 @@ async function guardarCompra() {
       await apiPost('categorias', { nombre: cat });
     }
 
-    // 2. REGISTRAR EN LA HOJA DE PRODUCTOS (Actualizar stock/precio)
+    // DENTRO DE guardarCompra() en compras.js
+
+    // 1. Guardar/Actualizar en Hoja "productos"
     for (const item of compraItems) {
-      // ... dentro del bucle for (const item of compraItems) de guardarCompra
-
-      const filaCompra = {
-        id: compraId,
-        fecha: fecha,
-        "proveedores": proveedor,   // CORRECCIÓN: Con "s" al final
-        "productos": item.nombre,
-        "total costo": item.costo * item.cantidad // CORRECCIÓN: Con espacio y comillas
-      };
-
-      await apiPost('compras', filaCompra);
+      await apiPost('productos', {
+        "nombre": item.nombre,      // Asegúrate que en Excel la columna sea exactamente "nombre"
+        "categoria": item.categoria,
+        "costo": item.costo,
+        "precio": item.venta,
+        "stock": item.cantidad      // Esto sumará/actualizará según tu Script de Google
+      });
     }
 
-    // 3. REGISTRAR EN LA HOJA DE COMPRAS (UNA FILA POR PRODUCTO)
-    // En lugar de enviar un solo objeto con JSON.stringify, 
-    // enviamos una petición por cada producto.
+    // 2. Guardar en Hoja "compras"
     for (const item of compraItems) {
       const filaCompra = {
-        id: compraId, // Mismo ID de compra para agruparlos visualmente
-        fecha: fecha,
-        proveedor: proveedor,
-        productos: item.nombre, // Solo el nombre del producto
-        totalcosto: item.costo * item.cantidad // Costo de esta línea
+        "id": compraId,
+        "fecha": fecha,
+        "proveedores": proveedor,
+        // Enviamos el objeto detallado como JSON para que no se pierda la info
+        "productos": `[{"nombre":"${item.nombre}","categoria":"${item.categoria}","cantidad":${item.cantidad},"costo":${item.costo},"venta":${item.venta}}]`,
+        "total costo": item.costo * item.cantidad
       };
-
       await apiPost('compras', filaCompra);
     }
 
