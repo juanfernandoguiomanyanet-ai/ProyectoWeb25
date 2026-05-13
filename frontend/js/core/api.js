@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://script.google.com/macros/s/AKfycbyDQnlzlxwjIa1CwWSbxFeTgDcQBzqn0q4Uz-0Wd_nnTFQtjDG1Tg4fcbekRZEpLUPK/exec";
 
 export async function api(endpoint, method = "GET", body = null) {
   try {
