@@ -364,21 +364,21 @@
       </div>
     </div>
 
-    <!-- Modal: Nuevo / Editar Proveedor -->
-    <div class="modal-bg" id="modal-cliente">
+    <div class="modal-bg" id="modal-cliente" style="display:none">
       <div class="modal">
-        <h3 id="modal-prov-title">Nuevo cliente</h3>
-        <input type="hidden" id="clie-edit-id">
+        <h3 id="modal-clie-title">Nuevo cliente</h3> <input type="hidden" id="clie-edit-id">
+
         <div class="form-row">
           <div class="form-group">
             <label>ID</label>
-            <input type="text" id="clie-id" placeholder="Ej: C001">
+            <input type="text" id="clie-id" readonly placeholder="Ej: C001">
           </div>
           <div class="form-group">
             <label>Nombre</label>
             <input type="text" id="clie-nombre" placeholder="Nombre del cliente">
           </div>
         </div>
+
         <div class="form-row">
           <div class="form-group">
             <label>Teléfono</label>
@@ -389,9 +389,10 @@
             <input type="email" id="clie-email" placeholder="correo@ejemplo.com">
           </div>
         </div>
+
         <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="cerrarModal('modal-proveedor')">Cancelar</button>
-          <button class="btn btn-primary" onclick="guardarProveedor()">Guardar</button>
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
         </div>
       </div>
     </div>

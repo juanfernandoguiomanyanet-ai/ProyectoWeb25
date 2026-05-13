@@ -40,13 +40,25 @@ function renderClientes(data) {
 }
 
 function abrirModalCliente() {
-  document.getElementById('modal-clie-title').textContent = 'Nuevo cliente';
-  document.getElementById('clie-edit-id').value  = '';
-  document.getElementById('clie-id').value       = 'CL-' + uid(); 
-  document.getElementById('clie-nombre').value   = '';
-  document.getElementById('clie-tel').value      = '';
-  document.getElementById('clie-email').value    = '';
-  abrirModal('modal-cliente');
+  // 1. Cambiamos el título del modal
+  const titulo = document.getElementById('modal-clie-title');
+  if (titulo) titulo.textContent = 'Nuevo Cliente';
+
+  // 2. Limpiamos los campos para que no aparezca info vieja
+  document.getElementById('clie-edit-id').value = '';
+  document.getElementById('clie-id').value = 'CL-' + uid(); // Genera ID nuevo
+  document.getElementById('clie-nombre').value = '';
+  document.getElementById('clie-tel').value = '';
+  document.getElementById('clie-email').value = '';
+
+  // 3. MOSTRAMOS EL MODAL
+  // Usamos 'flex' para que las reglas de centrado del CSS funcionen
+  const modal = document.getElementById('modal-cliente');
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    console.error("No se encontró el elemento con ID 'modal-cliente'");
+  }
 }
 
 function abrirEditCliente(cliente) {
