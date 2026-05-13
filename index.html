@@ -336,6 +336,59 @@
         </table>
       </div>
     </div>
+    <div class="view" id="view-clientes">
+      <div class="page-header">
+        <div>
+          <h2>Clientes</h2>
+          <p>Directorio de clientes de la tienda</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo cliente</button>
+      </div>
+      <div class="table-wrap">
+        <div id="clie-loading" class="loading" style="padding:20px 24px">
+          <div class="spinner"></div><span>Cargando clientes…</span>
+        </div>
+        <table id="clie-table" style="display:none">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="clie-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-cliente">
+      <div class="modal-content">
+        <h3 id="modal-clie-title">Nuevo cliente</h3>
+        <input type="hidden" id="clie-edit-id">
+        <div class="form-group">
+          <label>ID Cliente</label>
+          <input type="text" id="clie-id" readonly>
+        </div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="clie-nombre" placeholder="Nombre completo">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="clie-tel" placeholder="Opcional">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="text" id="clie-email" placeholder="Opcional">
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
+        </div>
+      </div>
+    </div>
 
   </main>
 

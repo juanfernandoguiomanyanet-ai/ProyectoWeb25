@@ -365,7 +365,19 @@ function poblarSelectClientes() {
     sel.appendChild(opt);
   });
 }
+function poblarSelectClientesVenta() {
+  const sel = document.getElementById('venta-cliente');
+  // Limpiar pero dejar la opción por defecto
+  sel.innerHTML = `<option value="Mostrador">Consumidor Final (Mostrador)</option>`;
 
+  // Usamos el estado global donde cargamos los clientes
+  state.clientes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.nombre; // O c.id según prefieras guardar en el excel de ventas
+    opt.textContent = c.nombre;
+    sel.appendChild(opt);
+  });
+}
 // ─── COBRAR VENTA ────────────────────────────────────────
 
 async function cobrar() {
