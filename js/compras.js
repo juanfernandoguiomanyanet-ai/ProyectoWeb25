@@ -59,15 +59,15 @@ function renderCompras(data) {
       }
     } catch { /* sin detalle */ }
 
+    // Dentro de renderCompras(data), cambia el return del map:
     return `<tr>
     <td><span class="badge badge-amber">${c.id || c.ID || '—'}</span></td>
     <td>${c.fecha || '—'}</td>
-    <td>${c.proveedor || '—'}</td>
-    <td style="font-size:12px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${resumenProductos}">
-     ${resumenProductos}
+    <td>${c.proveedores || c.proveedor || '—'}</td> <td style="font-size:12px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${resumenProductos}">
+      ${resumenProductos}
     </td>
-    <td style="font-weight:600">${fmt(c.totalcosto || c.total)}</td>
-  </tr>`;
+    <td style="font-weight:600">${fmt(c["total costo"] || c.totalcosto || 0)}</td> 
+    </tr>`;
   }).join('');
 }
 
@@ -90,7 +90,7 @@ function abrirModalCompra() {
 /** Rellena el select de proveedores y abre el modal de proveedores.js si elige "Nuevo" */
 function poblarSelectProveedoresCompra() {
   const sel = document.getElementById('compra-prov');
-  
+
   // Mantenemos la estructura limpia
   sel.innerHTML = `
     <option value="">Seleccionar proveedor…</option>
@@ -108,17 +108,17 @@ function poblarSelectProveedoresCompra() {
   sel.onchange = (e) => {
     if (e.target.value === "NUEVO_PROV") {
       // 1. Cerramos el modal de compra actual para que no se encimen
-      cerrarModal('modal-compra'); 
-      
+      cerrarModal('modal-compra');
+
       // 2. Llamamos a la función que abre el formulario de la imagen (af75bc.png)
       // Nota: Asegúrate de que este sea el nombre de la función en tu proveedores.js
       if (typeof abrirModalProveedor === 'function') {
-        abrirModalProveedor(); 
+        abrirModalProveedor();
       } else {
         // Si no se llama así, intentamos con el nombre estándar de tus modales
-        abrirModal('modal-proveedor'); 
+        abrirModal('modal-proveedor');
       }
-      
+
       // 3. Resetear el select por si el usuario cancela
       sel.value = "";
     }
@@ -140,44 +140,39 @@ function renderCompraItems() {
 
   if (!compraItems.length) {
     el.innerHTML = `<div style="padding:14px;text-align:center;font-size:13px;color:var(--text3)">
- Agrega productos con el botón de abajo
- </div>`;
+      Agrega productos con el botón de abajo
+    </div>`;
     calcTotalCompra();
     return;
   }
 
   el.innerHTML = compraItems.map((item, i) => `
- <div class="compra-item-row">
- <input type="text"
-   placeholder="Producto"
-   value="${item.nombre}"
-   oninput="compraItems[${i}].nombre = this.value">
-   <input type="text"
-   placeholder="Categoría"
-   value="${item.categoria || ''}"
-   oninput="compraItems[${i}].categoria = this.value">
- <input type="number"
-   placeholder="0"
-   value="${item.cantidad}"
-   min="1"
-   oninput="compraItems[${i}].cantidad = Number(this.value); calcTotalCompra()">
- <input type="number"
-   placeholder="Costo"
-   value="${item.costo}"
-   min="0"
-   oninput="compraItems[${i}].costo = Number(this.value); calcTotalCompra()">
-   <input type="number"
-   placeholder="Venta"
-   value="${item.venta || 0}"
-   min="0"
-   oninput="compraItems[${i}].venta = Number(this.value)">
- <button class="btn-icon"
-   style="color:var(--danger)"
-   onclick="eliminarItemCompra(${i})">
-  ${iconoEliminar()}
- </button>
- </div>
-`).join('');
+    <div class="compra-item-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+      <input type="text" placeholder="Producto" value="${item.nombre}" 
+        style="flex: 2.5; min-width: 0;"
+        oninput="compraItems[${i}].nombre = this.value">
+      
+      <input type="text" placeholder="Categoría" value="${item.categoria || ''}" 
+        style="flex: 1.5; min-width: 0;"
+        oninput="compraItems[${i}].categoria = this.value">
+      
+      <input type="number" placeholder="0" value="${item.cantidad}" min="1" 
+        style="flex: 1; min-width: 0; text-align: center;"
+        oninput="compraItems[${i}].cantidad = Number(this.value); calcTotalCompra()">
+      
+      <input type="number" placeholder="Costo" value="${item.costo}" min="0" 
+        style="flex: 1.2; min-width: 0;"
+        oninput="compraItems[${i}].costo = Number(this.value); calcTotalCompra()">
+      
+      <input type="number" placeholder="Venta" value="${item.venta || 0}" min="0" 
+        style="flex: 1.2; min-width: 0;"
+        oninput="compraItems[${i}].venta = Number(this.value)">
+      
+      <button class="btn-icon" style="color:var(--danger); width: 32px;" onclick="eliminarItemCompra(${i})">
+        ${iconoEliminar()}
+      </button>
+    </div>
+  `).join('');
 
   calcTotalCompra();
 }
@@ -220,13 +215,17 @@ async function guardarCompra() {
 
     // 2. REGISTRAR EN LA HOJA DE PRODUCTOS (Actualizar stock/precio)
     for (const item of compraItems) {
-      await apiPost('productos', {
-        nombre: item.nombre,
-        categoria: item.categoria,
-        costo: item.costo,   
-        precio: item.venta,  
-        stock: item.cantidad 
-      });
+      // ... dentro del bucle for (const item of compraItems) de guardarCompra
+
+      const filaCompra = {
+        id: compraId,
+        fecha: fecha,
+        "proveedores": proveedor,   // CORRECCIÓN: Con "s" al final
+        "productos": item.nombre,
+        "total costo": item.costo * item.cantidad // CORRECCIÓN: Con espacio y comillas
+      };
+
+      await apiPost('compras', filaCompra);
     }
 
     // 3. REGISTRAR EN LA HOJA DE COMPRAS (UNA FILA POR PRODUCTO)
@@ -240,14 +239,14 @@ async function guardarCompra() {
         productos: item.nombre, // Solo el nombre del producto
         totalcosto: item.costo * item.cantidad // Costo de esta línea
       };
-      
+
       await apiPost('compras', filaCompra);
     }
 
     toast('Compra y productos guardados correctamente');
     cerrarModal('modal-compra');
     loadCompras();
-    
+
   } catch (e) {
     console.error(e);
     toast('Error al sincronizar con Sheets', 'error');
