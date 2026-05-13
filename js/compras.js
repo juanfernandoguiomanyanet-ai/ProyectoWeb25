@@ -31,43 +31,46 @@ async function loadCompras() {
 function renderCompras(data) {
   document.getElementById('comp-loading').style.display = 'none';
   document.getElementById('comp-table').style.display = 'table';
-
   const body = document.getElementById('comp-body');
 
   if (!data.length) {
-    body.innerHTML = `<tr>
-   <td colspan="5" style="text-align:center;color:var(--text3);padding:32px">
-    Sin compras registradas
-   </td>
-  </tr>`;
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px">Sin compras</td></tr>`;
     return;
   }
 
   body.innerHTML = data.map(c => {
     let resumenProductos = '—';
+    
+    // Intentamos extraer el nombre del producto de diferentes posibles llaves
+    const prodData = c.productos || c.PRODUCTOS || '';
+    
     try {
-      // Intentamos leer el JSON que me mostraste
-      const arr = JSON.parse(c.productos || c.itemsJson || '[]');
-      if (arr.length) {
-        resumenProductos = arr
-          .map(x => {
-            // Si tiene categoría la mostramos, si no, solo nombre y cantidad
-            const cat = x.categoria ? `[${x.categoria}] ` : '';
-            return `${cat}${x.nombre || x.n} ×${x.cantidad || x.qty}`;
-          })
-          .join(', ');
+      // Si es un JSON (como tus primeras filas), lo parseamos
+      if (prodData.startsWith('[')) {
+        const arr = JSON.parse(prodData);
+        resumenProductos = arr.map(x => `${x.nombre || x.n} ×${x.cantidad || x.qty}`).join(', ');
+      } else {
+        // Si es texto plano (como el nuevo guardado), lo usamos directo
+        resumenProductos = prodData || '—';
       }
-    } catch { /* sin detalle */ }
+    } catch {
+      resumenProductos = prodData || '—';
+    }
 
-    // Dentro de renderCompras(data), cambia el return del map:
-    return `<tr>
-    <td><span class="badge badge-amber">${c.id || c.ID || '—'}</span></td>
-    <td>${c.fecha || '—'}</td>
-    <td>${c.proveedores || c.proveedor || '—'}</td> <td style="font-size:12px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${resumenProductos}">
-      ${resumenProductos}
-    </td>
-    <td style="font-weight:600">${fmt(c["total costo"] || c.totalcosto || 0)}</td> 
-    </tr>`;
+    // BUSCAMOS LAS LLAVES CORRECTAS PARA PROVEEDOR Y COSTO
+    const prov = c.proveedores || c.proveedor || c.PROVEEDOR || '—';
+    const costo = c["total costo"] || c.totalcosto || c.TOTAL_COSTO || 0;
+
+    return `
+      <tr>
+        <td><span class="badge badge-amber">${c.id || c.ID || '—'}</span></td>
+        <td>${c.fecha ? c.fecha.split('T')[0] : '—'}</td>
+        <td>${prov}</td>
+        <td style="font-size:12px; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${resumenProductos}">
+          ${resumenProductos}
+        </td>
+        <td style="font-weight:600">${fmt(costo)}</td>
+      </tr>`;
   }).join('');
 }
 
