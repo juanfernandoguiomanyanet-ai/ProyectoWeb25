@@ -440,3 +440,26 @@ async function guardarEditProdVenta() {
   cerrarModal('modal-edit-prod-venta');
   toast('Producto actualizado en la interfaz');
 }
+/**
+ * Revisa si existen ventas guardadas en el almacenamiento local
+ * y actualiza la visibilidad de la barra de "Ventas en espera".
+ */
+function checkVentaAbierta() {
+  const ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
+  const bar = document.getElementById('venta-abierta-bar');
+  
+  if (bar) {
+    if (ventas.length > 0) {
+      // Si hay ventas guardadas, mostramos la barra informativa
+      bar.style.display = 'flex';
+      
+      // Opcional: Actualizar un contador si tienes el elemento en el HTML
+      const countEl = document.getElementById('contador-ventas-guardadas');
+      if (countEl) countEl.textContent = ventas.length;
+      
+    } else {
+      // Si no hay nada, la ocultamos
+      bar.style.display = 'none';
+    }
+  }
+}
