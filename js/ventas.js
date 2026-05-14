@@ -45,12 +45,12 @@ function mostrarLoadingCatalogo(mostrar) {
 // --- LÓGICA DE VENTAS GUARDADAS ---
 
 function toggleListaGuardados() {
-    const modal = document.getElementById('modal-guardados');
-    if (modal.style.display === 'flex') {
-        cerrarModal('modal-guardados');
-    } else {
-        abrirModalGuardados();
-    }
+  const modal = document.getElementById('modal-guardados');
+  if (modal.style.display === 'flex') {
+    cerrarModal('modal-guardados');
+  } else {
+    abrirModalGuardados();
+  }
 }
 
 // Función genérica para abrir (asegúrate de tenerla)
@@ -68,10 +68,10 @@ function cerrarModal(id) {
 }
 
 // Cerrar al hacer clic fuera del contenido
-window.onclick = function(event) {
+window.onclick = function (event) {
   const modalGuardados = document.getElementById('modal-guardados');
   const modalEdit = document.getElementById('modal-edit-prod-venta');
-  
+
   if (event.target == modalGuardados) cerrarModal('modal-guardados');
   if (event.target == modalEdit) cerrarModal('modal-edit-prod-venta');
 }
@@ -97,7 +97,7 @@ function renderListaGuardados() {
           <div style="font-weight:bold; color:var(--primary); margin-bottom:2px;">${v.id}</div>
           <div style="font-size:12px; color:var(--text2);">
             <span style="background:#f0f0f0; padding:2px 6px; border-radius:4px; margin-right:5px;">
-              ${new Date(v.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              ${new Date(v.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
             ${v.items.length} productos — <strong>${metodoPago}</strong>
           </div>
@@ -140,11 +140,11 @@ function retomarVentaEspecifica(index) {
 
 function eliminarVentaGuardada(index) {
   if (!confirm('¿Seguro que quieres eliminar esta venta guardada?')) return;
-  
+
   let ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
   ventas.splice(index, 1);
   localStorage.setItem('ventasAbiertas', JSON.stringify(ventas));
-  
+
   renderListaGuardados();
   checkVentaAbierta();
   toast('Venta guardada eliminada', 'warning');
@@ -156,20 +156,20 @@ function guardarVentaAbierta() {
 
   // IMPORTANTE: Obtener las que ya existen primero
   let ventasActuales = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
-  
-  const nuevaVenta = { 
-    id: 'V-' + uid(), 
+
+  const nuevaVenta = {
+    id: 'V-' + uid(),
     items: [...carrito], // Copia profunda del carrito
-    metodoPago, 
-    ts: Date.now() 
+    metodoPago,
+    ts: Date.now()
   };
 
   // Agregar la nueva al final del arreglo
   ventasActuales.push(nuevaVenta);
-  
+
   // Guardar el arreglo completo de nuevo
   localStorage.setItem('ventasAbiertas', JSON.stringify(ventasActuales));
-  
+
   limpiarCarrito();
   checkVentaAbierta();
   toast('Venta guardada en la lista de espera');
@@ -216,31 +216,39 @@ function renderCatalog() {
 function renderProductCards(lista) {
   const grid = document.getElementById('products-grid');
 
-  if (!lista.length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:32px">
-   <p>Sin productos que mostrar</p>
-  </div>`;
+  // FILTRO: Solo dejamos los productos que tienen stock real
+  // Esto hace que si el stock llega a 0 en el Excel, desaparezca de la vista de ventas
+  const disponibles = lista.filter(p => Number(p.stock || 0) > 0);
+
+  // Si después de filtrar no queda nada, mostramos el mensaje de "Vacío"
+  if (!disponibles.length) {
+    grid.innerHTML = `
+      <div class="empty" style="grid-column: 1 / -1; padding: 32px; text-align: center;">
+        <p style="color: var(--text3);">No hay productos con stock disponible para la venta</p>
+      </div>`;
     return;
   }
 
-  grid.innerHTML = lista.map(p => {
+  // Mapeamos la lista de 'disponibles' en lugar de la lista original
+  grid.innerHTML = disponibles.map(p => {
     const stock = Number(p.stock || 0);
-    const stockClass = stock === 0 ? 'no-stock' : stock < 5 ? 'low-stock' : '';
+    // Mantenemos tus clases originales por si acaso el stock es bajo (< 5)
+    const stockClass = stock < 5 ? 'low-stock' : '';
     const codigoKey = p.codigo || p.nombre;
 
-    return `<div class="product-card ${stockClass}" onclick="addToCart('${codigoKey}')">
-   <div class="cat-dot"></div>
-   <div class="name">${p.nombre || 'Sin nombre'}</div>
-   <div class="price">${fmt(p.precio)}</div>
-   <div class="stock ${stockClass}">Stock: ${stock}</div>
-   <div class="edit-prod-trigger"
-     onclick="event.stopPropagation(); abrirEditProdVenta('${codigoKey}')">
-    Editar
-   </div>
-  </div>`;
+    return `
+      <div class="product-card ${stockClass}" onclick="addToCart('${codigoKey}')">
+        <div class="cat-dot"></div>
+        <div class="name">${p.nombre || 'Sin nombre'}</div>
+        <div class="price">${fmt(p.precio)}</div>
+        <div class="stock ${stockClass}">Stock: ${stock}</div>
+        <div class="edit-prod-trigger"
+             onclick="event.stopPropagation(); abrirEditProdVenta('${codigoKey}')">
+          Editar
+        </div>
+      </div>`;
   }).join('');
 }
-
 function poblarFilterCat() {
   const sel = document.getElementById('filter-cat');
   const cats = [...new Set(state.productos.map(p => p.categoria).filter(Boolean))];
@@ -387,7 +395,7 @@ async function cobrar() {
   const ventaId = 'VT-' + uid();
 
   const venta = {
-    id: ventaId, // Cambio: necesario para la llave del Apps Script
+    id: ventaId,
     'N venta': ventaId,
     fecha: new Date().toLocaleString('es-CO'),
     items: JSON.stringify(carrito.map(x => ({ n: x.nombre, q: x.qty, p: x.precio }))),
@@ -397,18 +405,42 @@ async function cobrar() {
   };
 
   try {
-    // Apuntamos a 'historial' que es donde se guardan las ventas
-    const result = await apiPost('historial', venta);
-    // Cambio: Google responde con ok o success
-    if (result.ok || result.success) {
-      toast('¡Venta registrada correctamente!');
+    // 1. REGISTRAR LA VENTA EN EL HISTORIAL
+    const resultVenta = await apiPost('historial', venta);
+
+    if (resultVenta.ok || resultVenta.success) {
+
+      // 2. ACTUALIZAR STOCK DE CADA PRODUCTO (Bucle de descuento)
+      for (const item of carrito) {
+        // Buscamos el producto original para calcular el nuevo stock
+        const pIdx = state.productos.findIndex(p => (p.codigo || p.nombre) === item.codigo);
+
+        if (pIdx >= 0) {
+          const nuevoStock = state.productos[pIdx].stock - item.qty;
+
+          // Actualizamos en Google Sheets (enviamos el nuevo valor final)
+          await apiPost('productos', {
+            nombre: item.nombre, // Usamos el nombre como llave para el script
+            stock: nuevoStock
+          });
+
+          // Actualizamos localmente para que la UI refleje el cambio de inmediato
+          state.productos[pIdx].stock = nuevoStock;
+        }
+      }
+
+      toast('¡Venta registrada y stock actualizado!');
       limpiarCarrito();
+
+      // 3. REFRESCO VISUAL: Filtramos y volvemos a renderizar el catálogo
+      filtrarProductos(); // Esto llamará a renderProductCards y ocultará los de stock 0
+
       if (ventaAbierta) descartarVentaAbierta();
     } else {
-      // Cambio: Google manda el error en .error o .message
-      toast('Error al registrar: ' + (result.error || result.message || ''), 'error');
+      toast('Error al registrar: ' + (resultVenta.error || resultVenta.message || ''), 'error');
     }
   } catch (e) {
+    console.error("Error en el cobro:", e);
     toast('Error de conexión con el servidor', 'error');
   }
 }
@@ -459,24 +491,24 @@ async function guardarEditProdVenta() {
 function checkVentaAbierta() {
   const ventas = JSON.parse(localStorage.getItem('ventasAbiertas') || '[]');
   const bar = document.getElementById('venta-abierta-bar');
-  
+
   if (bar) {
     if (ventas.length > 0) {
       // Si hay ventas guardadas, mostramos la barra informativa
       bar.style.display = 'flex';
-      
+
       // Opcional: Actualizar un contador si tienes el elemento en el HTML
       const countEl = document.getElementById('contador-ventas-guardadas');
       if (countEl) countEl.textContent = ventas.length;
-      
+
     } else {
       // Si no hay nada, la ocultamos
       bar.style.display = 'none';
     }
   }
-  
+
 }
 function abrirModalGuardados() {
-    renderListaGuardados(); 
-    abrirModal('modal-guardados'); // Usa la función de utils.js
+  renderListaGuardados();
+  abrirModal('modal-guardados'); // Usa la función de utils.js
 }
