@@ -405,43 +405,39 @@ async function cobrar() {
   };
 
   try {
-    // 1. REGISTRAR LA VENTA EN EL HISTORIAL
+    // 1. Guardar el historial de venta
     const resultVenta = await apiPost('historial', venta);
 
     if (resultVenta.ok || resultVenta.success) {
-
-      // 2. ACTUALIZAR STOCK DE CADA PRODUCTO (Bucle de descuento)
+      
+      // 2. ACTUALIZAR STOCK (Bucle de descuento)
       for (const item of carrito) {
-        // Buscamos el producto original para calcular el nuevo stock
         const pIdx = state.productos.findIndex(p => (p.codigo || p.nombre) === item.codigo);
-
+        
         if (pIdx >= 0) {
           const nuevoStock = state.productos[pIdx].stock - item.qty;
-
-          // Actualizamos en Google Sheets (enviamos el nuevo valor final)
+          
+          // CAMBIO CLAVE AQUÍ:
+          // Enviamos 'nombre' para que el script lo encuentre y NO cree una fila nueva.
           await apiPost('productos', {
-            nombre: item.nombre, // Usamos el nombre como llave para el script
+            id: item.codigo,    // Intenta buscar por ID
+            nombre: item.nombre, // Si no hay ID, busca por NOMBRE (seguridad extra)
             stock: nuevoStock
           });
 
-          // Actualizamos localmente para que la UI refleje el cambio de inmediato
+          // Actualizamos localmente para que la app sepa que hay menos stock
           state.productos[pIdx].stock = nuevoStock;
         }
       }
 
       toast('¡Venta registrada y stock actualizado!');
       limpiarCarrito();
-
-      // 3. REFRESCO VISUAL: Filtramos y volvemos a renderizar el catálogo
-      filtrarProductos(); // Esto llamará a renderProductCards y ocultará los de stock 0
-
+      filtrarProductos(); // Refresca el catálogo para ocultar si llegó a 0
+      
       if (ventaAbierta) descartarVentaAbierta();
-    } else {
-      toast('Error al registrar: ' + (resultVenta.error || resultVenta.message || ''), 'error');
     }
   } catch (e) {
-    console.error("Error en el cobro:", e);
-    toast('Error de conexión con el servidor', 'error');
+    toast('Error de conexión', 'error');
   }
 }
 
